@@ -1,5 +1,8 @@
 package bmu;
 
+import dan200.computer.api.IPeripheral;
+import dan200.computer.api.IComputerAccess;
+
 import ic2.api.Direction;
 import ic2.api.EnergyNet;
 import ic2.api.IEnergySink;
@@ -9,10 +12,16 @@ import net.minecraft.src.Block;
 import net.minecraft.src.NBTTagCompound;
 import net.minecraft.src.TileEntity;
 
-public class TileEntityTransporter extends TileEntityBMU implements IEnergySink, IEnergyStorage {
+public class TileEntityTransporter extends TileEntityBMU implements IEnergySink, IEnergyStorage, /* IPeripheral */ {
     public static final int ENERGY_CAPACITY = 10000000;
     public int energyStored = 0;
     public boolean isOnEnergyNet = false;
+    public String[] peripheralMethods = new String[]{
+        "getEnergyLevel",
+        "getFrequency", "setFrequency",
+        "acquireLock", "hasLock", "getLockStrength", "setBoostAmount", "releaseLock",
+        "teleport"
+    };
 
     public TileEntityTransporter() {
         super(CommonProxy.bmuBlock);

@@ -16,9 +16,12 @@ public class CommonProxy {
     public static ItemStack interdictorStack;
     public static ItemStack beaconStack;
 
+    public static int maxInterdictorRange;
+
     public void init() {
         initBlocks(BeamMeUp.config);
         initLanguage();
+        initSettings(BeamMeUp.config);
     }
 
     public void initBlocks(Configuration config) {
@@ -41,5 +44,11 @@ public class CommonProxy {
         LanguageRegistry.addName(transporterStack, "Transporter");
         LanguageRegistry.addName(interdictorStack, "Interdictor");
         LanguageRegistry.addName(beaconStack, "Transport Beacon");
+    }
+
+    public void initSettings(Configuration config) {
+        Property dictorRange = config.get(Configuration.CATEGORY_GENERAL, "interdictor.range", 8);
+        dictorRange.comment = "How far from itself will an interdictor work? Defaults to 8 blocks, giving it a range of 17x17x17.";
+        maxInterdictorRange = dictorRange.getInt();
     }
 }
