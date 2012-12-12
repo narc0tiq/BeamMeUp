@@ -1,10 +1,13 @@
 package bmu;
 
+import cpw.mods.fml.common.Side;
+
 import java.util.List;
 
 import net.minecraft.src.Block;
 import net.minecraft.src.BlockContainer;
 import net.minecraft.src.CreativeTabs;
+import net.minecraft.src.EntityPlayer;
 import net.minecraft.src.IBlockAccess;
 import net.minecraft.src.Material;
 import net.minecraft.src.TileEntity;
@@ -54,13 +57,13 @@ public class BlockBMU extends BlockContainer {
     @Override
     public TileEntity createNewTileEntity(World world, int data) {
         if(data == DATA_TRANSPORTER) {
-            return new TileEntityTransporter((Block)this);
+            return new TileEntityTransporter();
         }
         else if(data == DATA_INTERDICTOR) {
-            return new TileEntityInterdictor((Block)this);
+            return new TileEntityInterdictor();
         }
         else if(data == DATA_BEACON) {
-            return new TileEntityBeacon((Block)this);
+            return new TileEntityBeacon();
         }
 
         return null;
@@ -96,5 +99,21 @@ public class BlockBMU extends BlockContainer {
         }
 
         return TEX_INVALID;
+    }
+
+    @Override
+    public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int par6, float hitX, float hitY, float hitZ) {
+        if(BeamMeUp.getSide() == Side.CLIENT) {
+            return true;
+        }
+
+        TileEntity te = world.getBlockTileEntity(x, y, z);
+
+        if(te instanceof TileEntityBMU) {
+            // Some debug:
+            player.addChatMessage(((TileEntityBMU)te).getDebugMessage());
+        }
+
+        return true;
     }
 }

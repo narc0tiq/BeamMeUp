@@ -7,4 +7,8 @@ public class TileEntityBMU extends TileEntity {
     public TileEntityBMU(Block blockType) {
         this.blockType = blockType;
     }
+
+    public String getDebugMessage() {
+        return "";
+    }
 }
