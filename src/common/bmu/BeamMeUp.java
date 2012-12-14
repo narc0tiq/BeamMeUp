@@ -8,7 +8,9 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.network.NetworkMod;
+
 import net.minecraftforge.common.Configuration;
+import net.minecraftforge.common.MinecraftForge;
 
 @Mod(
         modid = "BeamMeUp",
@@ -19,9 +21,9 @@ import net.minecraftforge.common.Configuration;
 @NetworkMod(
         clientSideRequired = true,
         serverSideRequired = false,
-        versionBounds = "%conf:VERSION_BOUNDS%"//,
-//        channels = { CommonProxy.channelName },
-//        packetHandler = PacketHandler.class
+        versionBounds = "%conf:VERSION_BOUNDS%",
+        channels = { CommonProxy.CHANNEL_NAME },
+        packetHandler = PacketHandler.class
 )
 public class BeamMeUp {
     @Mod.Instance("BeamMeUp")
@@ -35,6 +37,8 @@ public class BeamMeUp {
     @Mod.PreInit
     public void preInit(FMLPreInitializationEvent event) {
         config = new Configuration(event.getSuggestedConfigurationFile());
+        EventHandler eventHandler = new EventHandler();
+        MinecraftForge.EVENT_BUS.register(eventHandler);
     }
 
     @Mod.Init

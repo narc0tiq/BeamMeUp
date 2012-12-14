@@ -6,6 +6,7 @@ import cpw.mods.fml.common.registry.LanguageRegistry;
 
 import net.minecraft.src.Block;
 import net.minecraft.src.ItemStack;
+import net.minecraft.src.World;
 
 import net.minecraftforge.common.Configuration;
 import net.minecraftforge.common.Property;
@@ -25,6 +26,9 @@ public class CommonProxy {
     public static double beaconMultiplier = 0.8D;
 
     public static int transporterBoostEU = 512;
+
+    public static final String CHANNEL_NAME = "bmu";
+    public static final byte PACKET_TELEPORT = 0;
 
     public void init() {
         initBlocks(BeamMeUp.config);
@@ -114,5 +118,13 @@ public class CommonProxy {
         int eid = EntityRegistry.findGlobalUniqueEntityId();
         EntityRegistry.registerModEntity(EntityTransporterHelper.class, "bmu.transporterhelper", 
                 eid, BeamMeUp.instance, 50, 1, true);
+    }
+
+    public World getClientWorld() {
+        return null;
+    }
+
+    public String getPlayerName() {
+        return "";
     }
 }

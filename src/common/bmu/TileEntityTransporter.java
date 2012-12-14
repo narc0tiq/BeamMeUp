@@ -1,5 +1,7 @@
 package bmu;
 
+import cpw.mods.fml.common.network.PacketDispatcher;
+
 import java.lang.reflect.Method;
 
 import dan200.computer.api.IPeripheral;
@@ -55,8 +57,8 @@ public class TileEntityTransporter extends TileEntityBMU implements IEnergySink,
         }
 
         if(freezer != null) {
-            if(freezeTimer == 60) {
-                freezer.setPosition(freezer.posX, freezer.posY + 3, freezer.posZ);
+            if(freezeTimer == 50) {
+                freezer.setPosition(xCoord + 50, yCoord + 5, zCoord + 30);
             }
 
             if(freezeTimer == 0) {
@@ -80,6 +82,13 @@ public class TileEntityTransporter extends TileEntityBMU implements IEnergySink,
         freezer.noClip = true;
         worldObj.spawnEntityInWorld(freezer);
         player.mountEntity(freezer);
+
+        int dimension = worldObj.getWorldInfo().getDimension();
+
+        PacketTeleport packet = new PacketTeleport((int)player.posX, (int)player.posY, (int)player.posZ,
+               xCoord + 50, yCoord + 6, zCoord + 30, player.username);
+        PacketDispatcher.sendPacketToAllAround(player.posX, player.posY, player.posZ, 16.0D, dimension, packet.getPacket250());
+        PacketDispatcher.sendPacketToAllAround(xCoord + 50, yCoord + 6, zCoord + 30, 16.0D, dimension, packet.getPacket250());
     }
 
     @Override
