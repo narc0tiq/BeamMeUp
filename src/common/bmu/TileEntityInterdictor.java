@@ -8,7 +8,10 @@ import ic2.api.EnergyNet;
 import ic2.api.IEnergySink;
 import ic2.api.IEnergyStorage;
 
+import java.lang.reflect.Method;
+
 import net.minecraft.src.Block;
+import net.minecraft.src.ChunkCoordinates;
 import net.minecraft.src.EntityItem;
 import net.minecraft.src.ItemStack;
 import net.minecraft.src.NBTTagCompound;
@@ -81,15 +84,28 @@ public class TileEntityInterdictor extends TileEntityBMU implements IEnergySink,
             return false;
         }
 
-        int maxRange = CommonProxy.maxInterdictorRange;
+        int maxRange = CommonProxy.interdictorRange;
 
         return ((Math.abs(x - xCoord) <= maxRange)
              && (Math.abs(y - yCoord) <= maxRange)
              && (Math.abs(z - zCoord) <= maxRange));
     }
 
+    public boolean rangesOn(ChunkCoordinates target) {
+        return rangesOn(target.posX, target.posY, target.posZ);
+    }
+
 //public interface IEnergyStorage {
     public int getStored() {
+        return energyStored;
+    }
+
+    public void setStored(int amount) {
+        energyStored = amount;
+    }
+
+    public int addEnergy(int amount) {
+        energyStored += amount;
         return energyStored;
     }
 
@@ -99,6 +115,10 @@ public class TileEntityInterdictor extends TileEntityBMU implements IEnergySink,
 
     public int getOutput() {
         return 0;
+    }
+
+    public boolean isTeleporterCompatible(Direction side) {
+        return false;
     }
 //}
 
@@ -131,37 +151,23 @@ public class TileEntityInterdictor extends TileEntityBMU implements IEnergySink,
 
 //public interface IPeripheral {
     public String getType() {
-        return "bmu.transporter";
+        return "bmu.interdictor";
     }
 
     public String[] getMethodNames() {
         return peripheralMethods;
     }
 
-    public synchronized Object[] callMethod(IComputerAccess computer, int method, Object[] arguments) throws Exception {
-        if(peripheralMethods[method] == "getFrequency") {
-            return getPeripheralFrequency(arguments);
+    public synchronized Object[] callMethod(IComputerAccess computer, int index, Object[] arguments) throws Exception {
+        Method method = null;
+        try {
+            method = this.getClass().getMethod(peripheralMethods[index] + "Peripheral", Object[].class);
         }
-        else if(peripheralMethods[method] == "setFrequency") {
-            return setPeripheralFrequency(arguments);
-        }
-        else if(peripheralMethods[method] == "getEnergyLevel") {
-            return getPeripheralEnergy(arguments);
-        }
-        else if(peripheralMethods[method] == "enable") {
-            return peripheralEnable(arguments);
-        }
-        else if(peripheralMethods[method] == "disable") {
-            return peripheralDisable(arguments);
-        }
-        else if(peripheralMethods[method] == "isEnabled") {
-            return isPeripheralEnabled(arguments);
-        }
-        else if(peripheralMethods[method] == "rangesOn") {
-            return peripheralRangesOn(arguments);
+        catch(Exception e) {
+            throw new Exception("Could not find method " + peripheralMethods[index] + ", something is seriously wrong!");
         }
 
-        throw new Exception("That's not a valid method for me!");
+        return (Object[])method.invoke(this, new Object[]{arguments});
     }
 
     public boolean canAttachToSide(int side) {
@@ -172,50 +178,51 @@ public class TileEntityInterdictor extends TileEntityBMU implements IEnergySink,
     public void detach(IComputerAccess computer) {}
 //}
 
-    public Object[] getPeripheralFrequency(Object[] arguments) throws Exception {
-        return new Object[] { this.frequency };
+// Actual peripheral methods {
+    public Object[] getFrequencyPeripheral(Object[] arguments) throws Exception {
+        return peripheralReturn(this.frequency);
     }
 
-    public Object[] setPeripheralFrequency(Object[] arguments) throws Exception {
+    public Object[] setFrequencyPeripheral(Object[] arguments) throws Exception {
         if((arguments.length < 1) || (!(arguments[0] instanceof Double))) {
             throw new Exception("Invalid arguments: Need a single number.");
         }
 
         if(this.frequency == ((Double)arguments[0]).intValue()) {
-            return new Object[] { false };
+            return peripheralReturn(false);
         }
 
         this.frequency = ((Double)arguments[0]).intValue();
-        return new Object[] { true };
+        return peripheralReturn(true);
     }
 
-    public Object[] getPeripheralEnergy(Object[] arguments) throws Exception {
-        return new Object[] { this.energyStored };
+    public Object[] getEnergyLevelPeripheral(Object[] arguments) throws Exception {
+        return peripheralReturn(this.energyStored);
     }
 
-    public Object[] peripheralEnable(Object[] arguments) throws Exception {
+    public Object[] enablePeripheral(Object[] arguments) throws Exception {
         if(this.isEnabled) {
-            return new Object[] { false };
+            return peripheralReturn(false);
         }
 
         this.isEnabled = true;
-        return new Object[] { true };
+        return peripheralReturn(true);
     }
 
-    public Object[] peripheralDisable(Object[] arguments) throws Exception {
+    public Object[] disablePeripheral(Object[] arguments) throws Exception {
         if(!this.isEnabled) {
-            return new Object[] { false };
+            return peripheralReturn(false);
         }
 
         this.isEnabled = false;
-        return new Object[] { true };
+        return peripheralReturn(true);
     }
 
-    public Object[] isPeripheralEnabled(Object[] arguments) throws Exception {
-        return new Object[] { this.isEnabled };
+    public Object[] isEnabledPeripheral(Object[] arguments) throws Exception {
+        return peripheralReturn(this.isEnabled);
     }
 
-    public Object[] peripheralRangesOn(Object[] arguments) throws Exception {
+    public Object[] rangesOnPeripheral(Object[] arguments) throws Exception {
         if((arguments.length < 1)
                 || (!(arguments[0] instanceof Double))
                 || (!(arguments[1] instanceof Double))
@@ -227,8 +234,9 @@ public class TileEntityInterdictor extends TileEntityBMU implements IEnergySink,
         int y = ((Double)arguments[1]).intValue();
         int z = ((Double)arguments[2]).intValue();
 
-        return new Object[] { this.rangesOn(x, y, z) };
+        return peripheralReturn(this.rangesOn(x, y, z));
     }
+//}
 
     @Override
     public void writeToNBT(NBTTagCompound tag) {

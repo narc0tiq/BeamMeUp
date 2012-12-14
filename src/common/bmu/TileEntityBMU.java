@@ -11,4 +11,9 @@ public class TileEntityBMU extends TileEntity {
     public String getDebugMessage() {
         return "";
     }
+
+    // Helper function for CC peripheral integration
+    public Object[] peripheralReturn(Object... args) {
+        return args;
+    }
 }

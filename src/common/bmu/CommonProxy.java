@@ -1,5 +1,6 @@
 package bmu;
 
+import cpw.mods.fml.common.registry.EntityRegistry;
 import cpw.mods.fml.common.registry.GameRegistry;
 import cpw.mods.fml.common.registry.LanguageRegistry;
 
@@ -16,12 +17,20 @@ public class CommonProxy {
     public static ItemStack interdictorStack;
     public static ItemStack beaconStack;
 
-    public static int maxInterdictorRange;
+    public static int interdictorRange = 8;
+
+    public static int transporterBaseSignal = 500;
+    public static double signalPerBlock = 1.0D;
+    public static double transporterBoostMultiplier = 0.1D;
+    public static double beaconMultiplier = 0.8D;
+
+    public static int transporterBoostEU = 512;
 
     public void init() {
         initBlocks(BeamMeUp.config);
         initLanguage();
         initSettings(BeamMeUp.config);
+        initEntity();
     }
 
     public void initBlocks(Configuration config) {
@@ -47,8 +56,63 @@ public class CommonProxy {
     }
 
     public void initSettings(Configuration config) {
-        Property dictorRange = config.get(Configuration.CATEGORY_GENERAL, "interdictor.range", 8);
-        dictorRange.comment = "How far from itself will an interdictor work? Defaults to 8 blocks, giving it a range of 17x17x17.";
-        maxInterdictorRange = dictorRange.getInt();
+        Property interdictorRange = config.get("general", "interdictor.range", this.interdictorRange);
+        interdictorRange.comment = "How far from itself will an interdictor work? Default is 8 blocks, giving it a range of 17x17x17.";
+        Property positionImprecision = config.get("general", "lock.imprecision", 16);
+        positionImprecision.comment = "How far (on each axis) can a poor lock send us, at worst?";
+
+        config.addCustomCategoryComment("time", "All times are expressed in ticks (1/20th of a second, usually).");
+        Property lockDuration = config.get("time", "lock.duration", 600);
+        lockDuration.comment = "How long can a transporter lock be held? Default is 600 ticks (30 seconds) to go from 100% to 0%.";
+        Property lockCooldown = config.get("time", "lock.cooldown", 20);
+        lockCooldown.comment = "How long after releasing a lock until the transporter is ready to (attempt to) acquire another?";
+        Property lockLossCooldown = config.get("time", "lock.loss.cooldown", 200);
+        lockLossCooldown.comment = "After losing a lock to poor signal strength, how long do we have to wait to try again?";
+
+        config.addCustomCategoryComment("signal", "Signal units are used internally, but tweaking them is an option.");
+        Property transporterBaseSignal = config.get("signal", "transporter", this.transporterBaseSignal);
+        transporterBaseSignal.comment = "The base signal strength for a transporter, without boosting or dampening.";
+        Property signalPerBlock = config.get("signal", "per.block", this.signalPerBlock);
+        signalPerBlock.comment = "The signal cost for each block of distance covered by a teleport.";
+        Property transporterBoostMultiplier = config.get("signal", "transporter.max.boost", this.transporterBoostMultiplier);
+        transporterBoostMultiplier.comment = "The maximum bonus signal a transporter can achieve using EU/t for a locking boost. Note the bonus is a fraction of the _required_ signal.";
+        Property beaconMultiplier = config.get("signal", "beacon.ratio", this.beaconMultiplier);
+        beaconMultiplier.comment = "Locking onto a beacon requires this ratio of the normal required signal.";
+        Property interdictorSignalRatios = config.get("signal", "interdictor.ratios", new double[]{ 0.5D, 0.4D, 0.375D, 0.33D });
+        interdictorSignalRatios.comment = "The ratio of remaining signal after each interdictor applies its dampening. Note these are applied in sequence, i.e. two interdictors apply 0.5 * 0.4 to the original signal.";
+        Property lockThresholds = config.get("signal", "lock.thresholds", new double[]{ 0.9, 0.5, 0.1 });
+        lockThresholds.comment = "The thresholds for telling apart perfect, good, bad, and terrible signal strengths.";
+        Property lockVariance = config.get("signal", "lock.variance", 0.2D);
+        lockVariance.comment = "A transport lock may vary naturally by up to this amount of its actual value.";
+
+        Property interdictorBaseConsumption = config.get("eu", "interdictor", 4);
+        interdictorBaseConsumption.comment = "An interdictor consumes this much EU/t at all times when enabled.";
+        Property interdictorDampeningConsumption = config.get("eu", "interdictor.dampening", new int[]{ 1, 2, 3, 4 });
+        interdictorDampeningConsumption.comment = "Interdiction EU/t costs for 1, 2, 3, and 4 interdictors all applying to the same target lock.";
+        Property transporterLockEU = config.get("eu", "transporter.lock", 512);
+        transporterLockEU.comment = "Maintaining a lock costs this much EU/t.";
+        Property transporterBadLockEU = config.get("eu", "transporter.max.lock", 1024);
+        transporterBadLockEU.comment = "Additionally, it may cost up to this much extra EU/t to maintain a bad lock (see lock.thresholds).";
+        Property transporterBoostEU = config.get("eu", "transporter.max.boost", this.transporterBoostEU);
+        transporterBoostEU.comment = "A transporter can be ordered to use up to this much extra EU/t to boost a lock by signal.transporter.max.boost.";
+        Property transportCostPerBlock = config.get("eu", "transport.distance", 100);
+        transportCostPerBlock.comment = "Each block of distance transported across costs this much EU for the teleport.";
+        Property transportCostPerItem = config.get("eu", "transport.item", 1000);
+        transportCostPerItem.comment = "Each item (not stack!) in an inventory costs this much EU to teleport. Note that blocks are considered single items, as are entities.";
+
+        this.interdictorRange = interdictorRange.getInt(this.interdictorRange);
+
+        this.transporterBaseSignal = transporterBaseSignal.getInt(this.transporterBaseSignal);
+        this.signalPerBlock = signalPerBlock.getDouble(this.signalPerBlock);
+        this.transporterBoostMultiplier = transporterBoostMultiplier.getDouble(this.transporterBoostMultiplier);
+        this.beaconMultiplier = beaconMultiplier.getDouble(this.beaconMultiplier);
+
+        this.transporterBoostEU = transporterBoostEU.getInt(this.transporterBoostEU);
+    }
+
+    public void initEntity() {
+        int eid = EntityRegistry.findGlobalUniqueEntityId();
+        EntityRegistry.registerModEntity(EntityTransporterHelper.class, "bmu.transporterhelper", 
+                eid, BeamMeUp.instance, 50, 1, true);
     }
 }

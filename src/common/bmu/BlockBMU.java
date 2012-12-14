@@ -114,6 +114,10 @@ public class BlockBMU extends BlockContainer {
             player.addChatMessage(((TileEntityBMU)te).getDebugMessage());
         }
 
+        if(te instanceof TileEntityTransporter) {
+            ((TileEntityTransporter)te).freezePlayer(player);
+        }
+
         return true;
     }
 }
