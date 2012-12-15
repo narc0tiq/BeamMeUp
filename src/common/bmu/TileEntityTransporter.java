@@ -19,9 +19,11 @@ import net.minecraft.src.TileEntity;
 
 public class TileEntityTransporter extends TileEntityBMU implements IEnergySink, IEnergyStorage, IPeripheral {
     public static final int ENERGY_CAPACITY = 10000000;
+    public static final int TELEPORT_DURATION = 100; // ticks
     public int energyStored = 0;
     public int frequency = 0;
     public ChunkCoordinatesBMU target = new ChunkCoordinatesBMU();
+    public TeleportLogic teleporter = null;
     public TransporterLock lock = null;
     public boolean isOnEnergyNet = false;
     public String[] peripheralMethods = new String[]{
@@ -34,7 +36,8 @@ public class TileEntityTransporter extends TileEntityBMU implements IEnergySink,
 
     public EntityPlayer player = null;
     public EntityTransporterHelper freezer = null;
-    public int freezeTimer = 0;
+    public int teleportTimer = TELEPORT_DURATION;
+    public boolean retrieving = false;
 
     public TileEntityTransporter() {
         super(CommonProxy.bmuBlock);
@@ -51,22 +54,60 @@ public class TileEntityTransporter extends TileEntityBMU implements IEnergySink,
             EnergyNet.getForWorld(worldObj).addTileEntity(this);
             isOnEnergyNet = true;
         }
+        if(teleportTimer < TELEPORT_DURATION) { teleportTimer++; }
 
-        if(freezeTimer > 0) {
-            freezeTimer--;
+        if(teleportTimer == 50) {
+            teleport();
         }
 
-        if(freezer != null) {
-            if(freezeTimer == 50) {
-                freezer.setPosition(xCoord + 50, yCoord + 5, zCoord + 30);
-            }
+        if(teleportTimer >= TELEPORT_DURATION) {
+            concludeTeleport();
+        }
+    }
 
-            if(freezeTimer == 0) {
-                player.unmountEntity(freezer);
-                freezer.isDead = true;
-                worldObj.removeEntity(freezer);
-                freezer = null; // and let the garbage collector catch it.
-            }
+    public boolean beginTeleport() {
+        if(teleporter == null) {
+            teleporter = new TeleportLogic(worldObj);
+        }
+
+        teleportTimer = 0;
+
+        int dimension = worldObj.getWorldInfo().getDimension();
+
+        PacketTeleport packet = new PacketTeleport(xCoord, yCoord + 1, zCoord, target.posX, target.posY, target.posZ, "none");
+        PacketDispatcher.sendPacketToAllAround(xCoord, yCoord + 1, zCoord, 16.0D, dimension, packet.getPacket250());
+        if(target.getDistanceSquared(xCoord, yCoord + 1, zCoord) > ((double)(16 * 16))) {
+            PacketDispatcher.sendPacketToAllAround(target.posX, target.posY, target.posZ, 16.0D, dimension, packet.getPacket250());
+        }
+
+        return true;
+    }
+
+    public void concludeTeleport() {
+        if(freezer != null) {
+            player.unmountEntity(freezer);
+            freezer.isDead = true;
+            worldObj.removeEntity(freezer);
+            freezer = null; // and let the garbage collector catch it.
+        }
+    }
+
+    public boolean transmit() {
+        retrieving = false;
+        return beginTeleport();
+    }
+
+    public boolean retrieve() {
+        retrieving = true;
+        return beginTeleport();
+    }
+
+    public void teleport() {
+        if(retrieving) {
+            teleporter.moveBlocks(target.posX, target.posY, target.posZ, xCoord, yCoord + 1, zCoord);
+        }
+        else {
+            teleporter.moveBlocks(xCoord, yCoord + 1, zCoord, target.posX, target.posY, target.posZ);
         }
     }
 
@@ -76,7 +117,7 @@ public class TileEntityTransporter extends TileEntityBMU implements IEnergySink,
         }
 
         this.player = player;
-        freezeTimer = 100;
+        //freezeTimer = 100;
         freezer = new EntityTransporterHelper(worldObj);
         freezer.setLocationAndAngles(player.posX, player.posY, player.posZ, player.rotationYaw, 0);
         freezer.noClip = true;
@@ -84,7 +125,6 @@ public class TileEntityTransporter extends TileEntityBMU implements IEnergySink,
         player.mountEntity(freezer);
 
         int dimension = worldObj.getWorldInfo().getDimension();
-
         PacketTeleport packet = new PacketTeleport((int)player.posX, (int)player.posY, (int)player.posZ,
                xCoord + 50, yCoord + 6, zCoord + 30, player.username);
         PacketDispatcher.sendPacketToAllAround(player.posX, player.posY, player.posZ, 16.0D, dimension, packet.getPacket250());
@@ -236,6 +276,14 @@ public class TileEntityTransporter extends TileEntityBMU implements IEnergySink,
 
     public Object[] getTargetCoordinatesPeripheral(Object[] arguments) {
         return peripheralReturn(target.posX, target.posY, target.posZ);
+    }
+
+    public Object[] retrievePeripheral(Object[] arguments) {
+        return peripheralReturn(this.retrieve());
+    }
+
+    public Object[] transmitPeripheral(Object[] arguments) {
+        return peripheralReturn(this.transmit());
     }
     //}
 
