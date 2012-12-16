@@ -21,6 +21,9 @@ public class PacketHandler implements IPacketHandler {
             if(packetID == CommonProxy.PACKET_TELEPORT) {
                 PacketTeleport.readPacket250(data);
             }
+            else if(packetID == CommonProxy.PACKET_MACHINE_STATE) {
+                PacketMachineState.readPacket250(data);
+            }
             else {
                 System.err.println("Narc, did you forget to add packet handling for packet ID " + packetID + "?");
             }

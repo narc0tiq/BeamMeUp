@@ -1,7 +1,12 @@
 package bmu;
 
-import cpw.mods.fml.common.network.PacketDispatcher;
+import com.google.common.io.ByteArrayDataInput;
 
+import cpw.mods.fml.common.network.PacketDispatcher;
+import cpw.mods.fml.common.Side;
+
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Method;
 
 import dan200.computer.api.IPeripheral;
@@ -50,6 +55,10 @@ public class TileEntityTransporter extends TileEntityBMU implements IEnergySink,
 
     @Override
     public void updateEntity() {
+        if(BeamMeUp.getSide() == Side.CLIENT) {
+            return; // client is a poopyhead
+        }
+
         if(!isOnEnergyNet) {
             EnergyNet.getForWorld(worldObj).addTileEntity(this);
             isOnEnergyNet = true;
@@ -66,6 +75,7 @@ public class TileEntityTransporter extends TileEntityBMU implements IEnergySink,
     }
 
     public boolean beginTeleport() {
+        worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
         if(teleporter == null) {
             teleporter = new TeleportLogic(worldObj);
         }
@@ -84,6 +94,7 @@ public class TileEntityTransporter extends TileEntityBMU implements IEnergySink,
     }
 
     public void concludeTeleport() {
+        worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
         if(freezer != null) {
             player.unmountEntity(freezer);
             freezer.isDead = true;
@@ -143,6 +154,10 @@ public class TileEntityTransporter extends TileEntityBMU implements IEnergySink,
     @Override
     public String getDebugMessage() {
         return "Transporter has " + energyStored + " EU inside.";
+    }
+
+    public boolean isActive() {
+        return (teleportTimer < TELEPORT_DURATION);
     }
 
     public boolean isBoosting() {
@@ -306,5 +321,15 @@ public class TileEntityTransporter extends TileEntityBMU implements IEnergySink,
         if(tag.hasKey("target")) {
             target.readFromNBT(tag.getCompoundTag("target"));
         }
+    }
+
+    @Override
+    public void writeToNetwork(DataOutputStream data) throws IOException {
+        data.writeInt(teleportTimer);
+    }
+
+    @Override
+    public void readFromNetwork(ByteArrayDataInput data) {
+        teleportTimer = data.readInt();
     }
 }

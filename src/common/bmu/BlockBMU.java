@@ -16,9 +16,10 @@ import net.minecraft.src.World;
 import net.minecraftforge.common.ForgeDirection;
 
 public class BlockBMU extends BlockContainer {
-    public static final int DATA_TRANSPORTER = 0;
-    public static final int DATA_INTERDICTOR = 1;
-    public static final int DATA_BEACON      = 2;
+    public static final int DATA_INTERDICTOR = 0;
+    public static final int DATA_TRANSPORTER = 1;
+
+    public static final int TEX_OFFSET_MACHINE_ON  =   4;
 
     public static final int TEX_TRANSPORTER_TOP    =   0;
     public static final int TEX_TRANSPORTER_BOTTOM =   1;
@@ -27,9 +28,6 @@ public class BlockBMU extends BlockContainer {
     public static final int TEX_INTERDICTOR_TOP    =  16;
     public static final int TEX_INTERDICTOR_BOTTOM =  17;
     public static final int TEX_INTERDICTOR_SIDE   =  18;
-
-    public static final int TEX_BEACON_ON          =  32;
-    public static final int TEX_BEACON_OFF         =  33;
 
     public static final int TEX_INVALID            = 255;
 
@@ -46,7 +44,6 @@ public class BlockBMU extends BlockContainer {
     public void getSubBlocks(int id, CreativeTabs type, List tabContents) {
         tabContents.add(CommonProxy.transporterStack);
         tabContents.add(CommonProxy.interdictorStack);
-        tabContents.add(CommonProxy.beaconStack);
     }
 
     @Override
@@ -62,9 +59,6 @@ public class BlockBMU extends BlockContainer {
         else if(data == DATA_INTERDICTOR) {
             return new TileEntityInterdictor();
         }
-        else if(data == DATA_BEACON) {
-            return new TileEntityBeacon();
-        }
 
         return null;
     }
@@ -72,11 +66,13 @@ public class BlockBMU extends BlockContainer {
     @Override
     public int getBlockTexture(IBlockAccess world, int x, int y, int z, int side) {
         int data = world.getBlockMetadata(x, y, z);
-        if(data == DATA_BEACON) {
-            // Query it and return on or off, depending on state
-            return TEX_BEACON_ON;
+        int texIndex =  getBlockTextureFromSideAndMetadata(side, data);
+
+        TileEntity te = world.getBlockTileEntity(x, y, z);
+        if((te instanceof TileEntityBMU) && (((TileEntityBMU)te).isActive())) {
+            texIndex += TEX_OFFSET_MACHINE_ON;
         }
-        return getBlockTextureFromSideAndMetadata(side, data);
+        return texIndex;
     }
 
     @Override

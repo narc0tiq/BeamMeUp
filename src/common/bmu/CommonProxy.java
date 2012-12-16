@@ -13,6 +13,7 @@ import net.minecraftforge.common.Property;
 
 public class CommonProxy {
     public static BlockBMU bmuBlock;
+    public static BlockBeacon beaconBlock;
 
     public static ItemStack transporterStack;
     public static ItemStack interdictorStack;
@@ -28,7 +29,9 @@ public class CommonProxy {
     public static int transporterBoostEU = 512;
 
     public static final String CHANNEL_NAME = "bmu";
-    public static final byte PACKET_TELEPORT = 0;
+
+    public static final byte PACKET_TELEPORT      = 0;
+    public static final byte PACKET_MACHINE_STATE = 1;
 
     public void init() {
         initBlocks(BeamMeUp.config);
@@ -38,14 +41,19 @@ public class CommonProxy {
     }
 
     public void initBlocks(Configuration config) {
-        Property blockID = config.getBlock("bmu", 513);
-        blockID.comment = "All BMU blocks share this block ID.";
+        Property blockID = config.getBlock("machine", 513);
+        blockID.comment = "All BMU machines (i.e. transporter, interdictor) share this block ID.";
         bmuBlock = new BlockBMU(blockID.getInt());
         GameRegistry.registerBlock(bmuBlock, BlockBMUItem.class);
 
+        blockID = config.getBlock("beacon", 514);
+        blockID.comment = "The beacon needs its own block ID.";
+        beaconBlock = new BlockBeacon(blockID.getInt());
+        GameRegistry.registerBlock(beaconBlock);
+
         transporterStack = new ItemStack(bmuBlock, 1, BlockBMU.DATA_TRANSPORTER);
         interdictorStack = new ItemStack(bmuBlock, 1, BlockBMU.DATA_INTERDICTOR);
-        beaconStack      = new ItemStack(bmuBlock, 1, BlockBMU.DATA_BEACON);
+        beaconStack      = new ItemStack(beaconBlock, 1);
 
         GameRegistry.registerTileEntity(TileEntityTransporter.class, "bmu.transporter.entity");
         GameRegistry.registerTileEntity(TileEntityInterdictor.class, "bmu.interdictor.entity");

@@ -1,5 +1,7 @@
 package bmu;
 
+import com.google.common.io.ByteArrayDataInput;
+
 import dan200.computer.api.IPeripheral;
 import dan200.computer.api.IComputerAccess;
 
@@ -8,6 +10,8 @@ import ic2.api.EnergyNet;
 import ic2.api.IEnergySink;
 import ic2.api.IEnergyStorage;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Method;
 
 import net.minecraft.src.Block;
@@ -65,6 +69,11 @@ public class TileEntityInterdictor extends TileEntityBMU implements IEnergySink,
             isInitialized = false;
         }
         super.invalidate();
+    }
+
+    @Override
+    public boolean isActive() {
+        return (isInitialized && isEnabled);
     }
 
     @Override
@@ -206,6 +215,7 @@ public class TileEntityInterdictor extends TileEntityBMU implements IEnergySink,
         }
 
         this.isEnabled = true;
+        worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
         return peripheralReturn(true);
     }
 
@@ -215,6 +225,7 @@ public class TileEntityInterdictor extends TileEntityBMU implements IEnergySink,
         }
 
         this.isEnabled = false;
+        worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
         return peripheralReturn(true);
     }
 
@@ -243,6 +254,7 @@ public class TileEntityInterdictor extends TileEntityBMU implements IEnergySink,
         super.writeToNBT(tag);
         tag.setInteger("energyStored", energyStored);
         tag.setInteger("frequency",    frequency);
+        tag.setBoolean("active",       isEnabled);
     }
 
     @Override
@@ -250,5 +262,16 @@ public class TileEntityInterdictor extends TileEntityBMU implements IEnergySink,
         super.readFromNBT(tag);
         energyStored = tag.getInteger("energyStored");
         frequency    = tag.getInteger("frequency");
+        isEnabled    = tag.getBoolean("active");
+    }
+
+    @Override
+    public void writeToNetwork(DataOutputStream data) throws IOException {
+        data.writeBoolean(isActive());
+    }
+
+    @Override
+    public void readFromNetwork(ByteArrayDataInput data) {
+        isInitialized = isEnabled = data.readBoolean();
     }
 }
