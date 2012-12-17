@@ -2,6 +2,8 @@ package bmu;
 
 import com.google.common.io.ByteArrayDataInput;
 
+import cpw.mods.fml.common.Side;
+
 import dan200.computer.api.IPeripheral;
 import dan200.computer.api.IComputerAccess;
 
@@ -28,6 +30,8 @@ public class TileEntityInterdictor extends TileEntityBMU implements IEnergySink,
     public int frequency = 0; // one-item whitelist
     public boolean isInitialized = false;
     public boolean isEnabled = true;
+    public boolean wasActive = false;
+    public int consumeThisTick = 0;
     public String[] peripheralMethods = new String[]{
         "getEnergyLevel",
         "getFrequency", "setFrequency",
@@ -46,6 +50,10 @@ public class TileEntityInterdictor extends TileEntityBMU implements IEnergySink,
 
     @Override
     public void updateEntity() {
+        if(BeamMeUp.getSide() == Side.CLIENT) {
+            return;
+        }
+
         if(!isInitialized) {
             EnergyNet.getForWorld(worldObj).addTileEntity(this);
             TransporterRegistry.registerInterdictor(this);
@@ -56,9 +64,16 @@ public class TileEntityInterdictor extends TileEntityBMU implements IEnergySink,
             return;
         }
 
-        if(energyStored > 4) {
-            energyStored -= 4; // Minimal consumption, even when idle.
+        if(energyStored > CommonProxy.interdictorBaseConsumption) {
+            energyStored -= CommonProxy.interdictorBaseConsumption; // Minimal consumption, even when idle.
+            energyStored -= consumeThisTick;
+            consumeThisTick = 0;
         }
+
+        if(wasActive != this.isActive()) {
+            worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
+        }
+        wasActive = this.isActive();
     }
 
     @Override
@@ -73,7 +88,12 @@ public class TileEntityInterdictor extends TileEntityBMU implements IEnergySink,
 
     @Override
     public boolean isActive() {
-        return (isInitialized && isEnabled);
+        if(BeamMeUp.getSide() == Side.CLIENT) {
+            return isEnabled;
+        }
+        else { // Side.SERVER and whatnot
+            return (isEnabled && (energyStored > CommonProxy.interdictorBaseConsumption));
+        }
     }
 
     @Override
@@ -89,7 +109,7 @@ public class TileEntityInterdictor extends TileEntityBMU implements IEnergySink,
     }
 
     public boolean rangesOn(int x, int y, int z) {
-        if(!isEnabled) {
+        if(!isActive()) {
             return false;
         }
 
@@ -98,6 +118,25 @@ public class TileEntityInterdictor extends TileEntityBMU implements IEnergySink,
         return ((Math.abs(x - xCoord) <= maxRange)
              && (Math.abs(y - yCoord) <= maxRange)
              && (Math.abs(z - zCoord) <= maxRange));
+    }
+
+    public boolean blocks(int frequency) {
+        if(!isActive()) {
+            return false;
+        }
+
+        return (frequency != this.frequency);
+    }
+
+    public boolean block(int dictorCount) {
+        int consumption = CommonProxy.interdictorDampeningConsumption[dictorCount - 1];
+
+        if((energyStored - consumeThisTick) < consumption) {
+            return false; // we didn't actually manage to interdict: no power
+        }
+
+        consumeThisTick += consumption;
+        return true;
     }
 
     public boolean rangesOn(ChunkCoordinates target) {
@@ -272,6 +311,6 @@ public class TileEntityInterdictor extends TileEntityBMU implements IEnergySink,
 
     @Override
     public void readFromNetwork(ByteArrayDataInput data) {
-        isInitialized = isEnabled = data.readBoolean();
+        isEnabled = data.readBoolean();
     }
 }

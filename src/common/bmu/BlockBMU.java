@@ -99,7 +99,7 @@ public class BlockBMU extends BlockContainer {
 
     @Override
     public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int par6, float hitX, float hitY, float hitZ) {
-        if(BeamMeUp.getSide() == Side.CLIENT) {
+        if((BeamMeUp.getSide() == Side.CLIENT) || player.isSneaking()) {
             return true;
         }
 

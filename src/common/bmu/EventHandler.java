@@ -14,8 +14,8 @@ import java.util.logging.Logger;
 import net.minecraft.client.Minecraft;
 
 import net.minecraftforge.client.event.sound.SoundLoadEvent;
-import net.minecraftforge.client.event.sound.PlaySoundEvent;
 import net.minecraftforge.event.ForgeSubscribe;
+import net.minecraftforge.event.world.WorldEvent;
 
 public class EventHandler {
     public Logger getLogger() {
@@ -62,5 +62,10 @@ public class EventHandler {
                 getLogger().log(Level.SEVERE, "BeamMeUp: Failed to load sound: " + soundFiles[i], e.toString());
             }
         }
+    }
+
+    @ForgeSubscribe
+    public void onWorldUnload(WorldEvent.Unload event) {
+        TransporterRegistry.clear(event.world);
     }
 }

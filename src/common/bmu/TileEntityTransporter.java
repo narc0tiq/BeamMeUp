@@ -24,13 +24,20 @@ import net.minecraft.src.TileEntity;
 
 public class TileEntityTransporter extends TileEntityBMU implements IEnergySink, IEnergyStorage, IPeripheral {
     public static final int ENERGY_CAPACITY = 10000000;
-    public static final int TELEPORT_DURATION = 100; // ticks
     public int energyStored = 0;
+    public boolean isOnEnergyNet = false;
+
     public int frequency = 0;
+
+    public static final int TELEPORT_DURATION = 100; // ticks
+    public boolean retrieving = false;
+    public int teleportTimer = TELEPORT_DURATION;
+    public int cooldownTimer = 0;
+
     public ChunkCoordinatesBMU target = new ChunkCoordinatesBMU();
     public TeleportLogic teleporter = null;
     public TransporterLock lock = null;
-    public boolean isOnEnergyNet = false;
+
     public String[] peripheralMethods = new String[]{
         "getEnergyLevel",
         "getFrequency", "setFrequency",
@@ -39,10 +46,6 @@ public class TileEntityTransporter extends TileEntityBMU implements IEnergySink,
         "retrieve", "transmit"
     }; // the contract for these is public Object[] methodNamePeripheral(Object[] args) must exist
 
-    public EntityPlayer player = null;
-    public EntityTransporterHelper freezer = null;
-    public int teleportTimer = TELEPORT_DURATION;
-    public boolean retrieving = false;
 
     public TileEntityTransporter() {
         super(CommonProxy.bmuBlock);
@@ -63,18 +66,32 @@ public class TileEntityTransporter extends TileEntityBMU implements IEnergySink,
             EnergyNet.getForWorld(worldObj).addTileEntity(this);
             isOnEnergyNet = true;
         }
-        if(teleportTimer < TELEPORT_DURATION) { teleportTimer++; }
 
+        if(cooldownTimer > 0) {
+            cooldownTimer--;
+        }
+
+        if(lock != null) {
+            lock.signalTick();
+            checkForBrokenLock();
+        }
+
+        if(teleportTimer < TELEPORT_DURATION) {
+            teleportTimer++;
+        }
         if(teleportTimer == 50) {
             teleport();
         }
-
         if(teleportTimer >= TELEPORT_DURATION) {
             concludeTeleport();
         }
     }
 
     public boolean beginTeleport() {
+        if(lock == null) {
+            return false; // Teleports without locks are no longer permitted.
+        }
+
         worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
         if(teleporter == null) {
             teleporter = new TeleportLogic(worldObj);
@@ -95,12 +112,12 @@ public class TileEntityTransporter extends TileEntityBMU implements IEnergySink,
 
     public void concludeTeleport() {
         worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
-        if(freezer != null) {
+/*        if(freezer != null) {
             player.unmountEntity(freezer);
             freezer.isDead = true;
             worldObj.removeEntity(freezer);
             freezer = null; // and let the garbage collector catch it.
-        }
+        } */
     }
 
     public boolean transmit() {
@@ -122,7 +139,49 @@ public class TileEntityTransporter extends TileEntityBMU implements IEnergySink,
         }
     }
 
-    public void freezePlayer(EntityPlayer player) {
+    public boolean acquireLock() {
+        System.out.println("Transporter cooldown timer: " + cooldownTimer);
+        if((lock != null) || (cooldownTimer > 0)) {
+            return false; // Cannot acquire a lock while an existing lock is being held.
+        }
+
+        lock = new TransporterLock(this, target);
+        if(lock.getSignalStrength() < CommonProxy.lockThresholds[2]) {
+            releaseLock();
+            return false;
+        }
+        return true;
+    }
+
+    public boolean releaseLock() {
+        if(lock == null) {
+            return false; // Cannot release a nonexistent lock.
+        }
+
+        cooldownTimer = CommonProxy.lockCooldown;
+        cooldownTimer += lock.getExtraCooldown();
+        lock = null;
+
+        return true;
+    }
+
+    public double getSignalStrength() {
+        if(lock == null) {
+            return 0.0D;
+        }
+
+        return lock.getSignalStrength();
+    }
+
+    public void checkForBrokenLock() {
+        if(lock.getExtraCooldown() >= CommonProxy.lockLossCooldown) {
+            releaseLock(); // and have a headache
+        }
+    }
+
+
+
+/*    public void freezePlayer(EntityPlayer player) {
         if(freezer != null) {
             return;
         }
@@ -141,6 +200,7 @@ public class TileEntityTransporter extends TileEntityBMU implements IEnergySink,
         PacketDispatcher.sendPacketToAllAround(player.posX, player.posY, player.posZ, 16.0D, dimension, packet.getPacket250());
         PacketDispatcher.sendPacketToAllAround(xCoord + 50, yCoord + 6, zCoord + 30, 16.0D, dimension, packet.getPacket250());
     }
+*/
 
     @Override
     public void invalidate() {
@@ -260,6 +320,10 @@ public class TileEntityTransporter extends TileEntityBMU implements IEnergySink,
         if((arguments.length < 1) || (!(arguments[0] instanceof Double))) {
            throw new Exception("Invalid arguments: Need a single number.");
         }
+        if(lock != null) {
+            throw new Exception("Cannot change frequency while a lock is being held!");
+        }
+
         if(this.frequency != ((Double)arguments[0]).intValue()) {
             this.frequency = ((Double)arguments[0]).intValue();
             return peripheralReturn(true);
@@ -291,6 +355,22 @@ public class TileEntityTransporter extends TileEntityBMU implements IEnergySink,
 
     public Object[] getTargetCoordinatesPeripheral(Object[] arguments) {
         return peripheralReturn(target.posX, target.posY, target.posZ);
+    }
+
+    public Object[] acquireLockPeripheral(Object[] arguments) {
+        return peripheralReturn(acquireLock());
+    }
+
+    public Object[] releaseLockPeripheral(Object[] arguments) {
+        return peripheralReturn(releaseLock());
+    }
+
+    public Object[] getLockStrengthPeripheral(Object[] arguments) {
+        return peripheralReturn(getSignalStrength());
+    }
+
+    public Object[] hasLockPeripheral(Object[] arguments) {
+        return peripheralReturn(lock != null);
     }
 
     public Object[] retrievePeripheral(Object[] arguments) {
