@@ -60,9 +60,6 @@ public class TransporterRegistry {
             interdictors.put(interdictor.worldObj, worldMap);
         }
 
-        if(worldMap.containsKey(location)) {
-            throw new RuntimeException("Interdictor registering itself with the same world and coordinates twice! Game over, man.");
-        }
         worldMap.put(location, interdictor);
     }
 
