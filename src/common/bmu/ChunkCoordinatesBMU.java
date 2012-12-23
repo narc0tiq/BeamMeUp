@@ -1,7 +1,7 @@
 package bmu;
 
-import net.minecraft.src.ChunkCoordinates;
-import net.minecraft.src.NBTTagCompound;
+import net.minecraft.util.ChunkCoordinates;
+import net.minecraft.nbt.NBTTagCompound;
 
 public class ChunkCoordinatesBMU extends ChunkCoordinates {
     public ChunkCoordinatesBMU() {

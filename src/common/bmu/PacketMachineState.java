@@ -6,11 +6,11 @@ import java.io.IOException;
 
 import com.google.common.io.ByteArrayDataInput;
 
-import net.minecraft.src.ChunkCoordinates;
-import net.minecraft.src.Packet;
-import net.minecraft.src.Packet250CustomPayload;
-import net.minecraft.src.TileEntity;
-import net.minecraft.src.World;
+import net.minecraft.network.packet.Packet;
+import net.minecraft.network.packet.Packet250CustomPayload;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.ChunkCoordinates;
+import net.minecraft.world.World;
 
 public class PacketMachineState {
     public TileEntityBMU machine;

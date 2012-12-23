@@ -3,7 +3,7 @@ package bmu;
 import com.google.common.io.ByteArrayDataInput;
 
 import cpw.mods.fml.common.network.PacketDispatcher;
-import cpw.mods.fml.common.Side;
+import cpw.mods.fml.relauncher.Side;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -13,19 +13,23 @@ import dan200.computer.api.IPeripheral;
 import dan200.computer.api.IComputerAccess;
 
 import ic2.api.Direction;
-import ic2.api.EnergyNet;
-import ic2.api.IEnergySink;
+import ic2.api.energy.EnergyNet;
+import ic2.api.energy.event.EnergyTileLoadEvent;
+import ic2.api.energy.event.EnergyTileUnloadEvent;
+import ic2.api.energy.tile.IEnergySink;
 import ic2.api.IEnergyStorage;
 
-import net.minecraft.src.Block;
-import net.minecraft.src.EntityPlayer;
-import net.minecraft.src.NBTTagCompound;
-import net.minecraft.src.TileEntity;
+import net.minecraft.block.Block;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.tileentity.TileEntity;
+
+import net.minecraftforge.common.MinecraftForge;
 
 public class TileEntityTransporter extends TileEntityBMU implements IEnergySink, IEnergyStorage, IPeripheral {
     public static final int ENERGY_CAPACITY = 10000000;
     public int energyStored = 0;
-    public boolean isOnEnergyNet = false;
+    public boolean isInitialized = false;
 
     public int frequency = 0;
 
@@ -56,15 +60,29 @@ public class TileEntityTransporter extends TileEntityBMU implements IEnergySink,
         return true;
     }
 
+    public void initialize() {
+        if(!isInitialized) {
+            MinecraftForge.EVENT_BUS.post(new EnergyTileLoadEvent(this));
+            isInitialized = true;
+        }
+    }
+
+    // Cousin to initialize()
+    public void terminate() {
+        if(isInitialized) {
+            MinecraftForge.EVENT_BUS.post(new EnergyTileUnloadEvent(this));
+            isInitialized = false;
+        }
+    }
+
     @Override
     public void updateEntity() {
         if(BeamMeUp.getSide() == Side.CLIENT) {
             return; // client is a poopyhead
         }
 
-        if(!isOnEnergyNet) {
-            EnergyNet.getForWorld(worldObj).addTileEntity(this);
-            isOnEnergyNet = true;
+        if(!isInitialized) {
+            this.initialize();
         }
 
         if(cooldownTimer > 0) {
@@ -204,11 +222,14 @@ public class TileEntityTransporter extends TileEntityBMU implements IEnergySink,
 
     @Override
     public void invalidate() {
-        if(isOnEnergyNet) {
-            EnergyNet.getForWorld(worldObj).removeTileEntity(this);
-            isOnEnergyNet = false;
-        }
+        this.terminate();
         super.invalidate();
+    }
+
+    @Override
+    public void onChunkUnload() {
+        this.terminate();
+        super.onChunkUnload();
     }
 
     @Override
@@ -256,13 +277,17 @@ public class TileEntityTransporter extends TileEntityBMU implements IEnergySink,
 //}
 
 //public interface IEnergySink extends IEnergyAcceptor {
-    public boolean demandsEnergy() {
-        return energyStored < ENERGY_CAPACITY;
+    public int demandsEnergy() {
+        return ENERGY_CAPACITY - energyStored;
     }
 
     public int injectEnergy(Direction directionFrom, int amount) {
         energyStored += amount;
         return 0;
+    }
+
+    public int getMaxSafeInput() {
+        return 2048;
     }
 //}
 
@@ -274,7 +299,7 @@ public class TileEntityTransporter extends TileEntityBMU implements IEnergySink,
 
 //public interface IEnergyTile {
     public boolean isAddedToEnergyNet() {
-        return isOnEnergyNet;
+        return isInitialized;
     }
 //}
 
@@ -303,7 +328,7 @@ public class TileEntityTransporter extends TileEntityBMU implements IEnergySink,
         return true;
     }
 
-    public void attach(IComputerAccess computer, String computerSide) {}
+    public void attach(IComputerAccess computer) {}
     public void detach(IComputerAccess computer) {}
 //}
 

@@ -7,8 +7,8 @@ import java.util.Map;
 
 import com.google.common.collect.ImmutableList;
 
-import net.minecraft.src.ChunkCoordinates;
-import net.minecraft.src.World;
+import net.minecraft.util.ChunkCoordinates;
+import net.minecraft.world.World;
 
 public class TransporterRegistry {
     // Key: frequency, Value: list of transporters on that frequency.

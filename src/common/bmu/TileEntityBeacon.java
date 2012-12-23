@@ -4,7 +4,7 @@ import com.google.common.io.ByteArrayDataInput;
 
 import java.io.DataOutputStream;
 
-import net.minecraft.src.Block;
+import net.minecraft.block.Block;
 
 public class TileEntityBeacon extends TileEntityBMU {
     public int frequency = 1337;

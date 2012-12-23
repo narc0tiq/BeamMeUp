@@ -1,7 +1,7 @@
 package bmu;
 
-import net.minecraft.src.ItemStack;
-import net.minecraft.src.ItemBlock;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.ItemBlock;
 
 public class BlockBMUItem extends ItemBlock {
     public BlockBMUItem(int i) {

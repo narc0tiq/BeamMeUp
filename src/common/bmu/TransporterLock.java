@@ -3,9 +3,9 @@ package bmu;
 import java.util.List;
 import java.util.Random;
 
-import net.minecraft.src.ChunkCoordinates;
-import net.minecraft.src.MathHelper;
-import net.minecraft.src.World;
+import net.minecraft.util.ChunkCoordinates;
+import net.minecraft.util.MathHelper;
+import net.minecraft.world.World;
 
 import net.minecraftforge.common.ForgeDirection;
 

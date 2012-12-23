@@ -2,7 +2,7 @@ package bmu;
 
 import cpw.mods.fml.client.FMLClientHandler;
 
-import net.minecraft.src.World;
+import net.minecraft.world.World;
 
 import net.minecraftforge.client.MinecraftForgeClient;
 

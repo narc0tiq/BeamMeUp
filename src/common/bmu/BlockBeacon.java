@@ -1,9 +1,9 @@
 package bmu;
 
-import net.minecraft.src.AxisAlignedBB;
-import net.minecraft.src.IBlockAccess;
-import net.minecraft.src.TileEntity;
-import net.minecraft.src.World;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.world.IBlockAccess;
+import net.minecraft.world.World;
 
 public class BlockBeacon extends BlockBMU {
     public static final int TEX_BEACON_ON          =  32;

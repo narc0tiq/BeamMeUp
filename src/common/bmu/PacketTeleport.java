@@ -7,10 +7,10 @@ import java.io.IOException;
 import com.google.common.io.ByteArrayDataInput;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.src.ChunkCoordinates;
-import net.minecraft.src.Packet;
-import net.minecraft.src.Packet250CustomPayload;
-import net.minecraft.src.World;
+import net.minecraft.util.ChunkCoordinates;
+import net.minecraft.network.packet.Packet;
+import net.minecraft.network.packet.Packet250CustomPayload;
+import net.minecraft.world.World;
 
 public class PacketTeleport {
     public int sourceX;
@@ -78,8 +78,8 @@ public class PacketTeleport {
             Minecraft.getMinecraft().sndManager.playSoundFX("bmu.portal", 1.0F, 1.0F);
         }
         else {
-            world.playSound(sourceX, sourceY, sourceZ, "bmu.portal", 1.0F, 1.0F);
-            world.playSound(destinationX, destinationY, destinationZ, "bmu.portal", 1.0F, 1.0F);
+            world.playSound(sourceX, sourceY, sourceZ, "bmu.portal", 1.0F, 1.0F, false);
+            world.playSound(destinationX, destinationY, destinationZ, "bmu.portal", 1.0F, 1.0F, false);
         }
     }
 }

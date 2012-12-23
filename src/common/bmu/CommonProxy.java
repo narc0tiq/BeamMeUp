@@ -4,9 +4,10 @@ import cpw.mods.fml.common.registry.EntityRegistry;
 import cpw.mods.fml.common.registry.GameRegistry;
 import cpw.mods.fml.common.registry.LanguageRegistry;
 
-import net.minecraft.src.Block;
-import net.minecraft.src.ItemStack;
-import net.minecraft.src.World;
+import net.minecraft.block.Block;
+import net.minecraft.item.ItemBlock;
+import net.minecraft.item.ItemStack;
+import net.minecraft.world.World;
 
 import net.minecraftforge.common.Configuration;
 import net.minecraftforge.common.Property;
@@ -54,12 +55,12 @@ public class CommonProxy {
         Property blockID = config.getBlock("machine", 513);
         blockID.comment = "All BMU machines (i.e. transporter, interdictor) share this block ID.";
         bmuBlock = new BlockBMU(blockID.getInt());
-        GameRegistry.registerBlock(bmuBlock, BlockBMUItem.class);
+        GameRegistry.registerBlock(bmuBlock, BlockBMUItem.class, bmuBlock.getBlockName());
 
         blockID = config.getBlock("beacon", 514);
         blockID.comment = "The beacon needs its own block ID.";
         beaconBlock = new BlockBeacon(blockID.getInt());
-        GameRegistry.registerBlock(beaconBlock);
+        GameRegistry.registerBlock(beaconBlock, ItemBlock.class, beaconBlock.getBlockName());
 
         transporterStack = new ItemStack(bmuBlock, 1, BlockBMU.DATA_TRANSPORTER);
         interdictorStack = new ItemStack(bmuBlock, 1, BlockBMU.DATA_INTERDICTOR);

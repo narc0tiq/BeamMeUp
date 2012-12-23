@@ -5,9 +5,9 @@ import com.google.common.io.ByteArrayDataInput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import net.minecraft.src.Block;
-import net.minecraft.src.Packet;
-import net.minecraft.src.TileEntity;
+import net.minecraft.block.Block;
+import net.minecraft.network.packet.Packet;
+import net.minecraft.tileentity.TileEntity;
 
 public abstract class TileEntityBMU extends TileEntity {
     public TileEntityBMU(Block blockType) {

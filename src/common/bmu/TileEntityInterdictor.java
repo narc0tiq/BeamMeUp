@@ -2,26 +2,30 @@ package bmu;
 
 import com.google.common.io.ByteArrayDataInput;
 
-import cpw.mods.fml.common.Side;
+import cpw.mods.fml.relauncher.Side;
 
 import dan200.computer.api.IPeripheral;
 import dan200.computer.api.IComputerAccess;
 
 import ic2.api.Direction;
-import ic2.api.EnergyNet;
-import ic2.api.IEnergySink;
+import ic2.api.energy.EnergyNet;
+import ic2.api.energy.event.EnergyTileLoadEvent;
+import ic2.api.energy.event.EnergyTileUnloadEvent;
+import ic2.api.energy.tile.IEnergySink;
 import ic2.api.IEnergyStorage;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
 
-import net.minecraft.src.Block;
-import net.minecraft.src.ChunkCoordinates;
-import net.minecraft.src.EntityItem;
-import net.minecraft.src.ItemStack;
-import net.minecraft.src.NBTTagCompound;
-import net.minecraft.src.TileEntity;
+import net.minecraft.block.Block;
+import net.minecraft.entity.item.EntityItem;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.ChunkCoordinates;
+
+import net.minecraftforge.common.MinecraftForge;
 
 public class TileEntityInterdictor extends TileEntityBMU implements IEnergySink, IEnergyStorage, IPeripheral {
     public static final int ENERGY_CAPACITY = 600000;
@@ -48,6 +52,22 @@ public class TileEntityInterdictor extends TileEntityBMU implements IEnergySink,
         return true;
     }
 
+    public void initialize() {
+        if(!isInitialized) {
+            MinecraftForge.EVENT_BUS.post(new EnergyTileLoadEvent(this));
+            TransporterRegistry.registerInterdictor(this);
+            isInitialized = true;
+        }
+    }
+
+    // Cousin to initialize(), above
+    public void terminate() {
+        if(isInitialized) {
+            MinecraftForge.EVENT_BUS.post(new EnergyTileUnloadEvent(this));
+            isInitialized = false;
+        }
+    }
+
     @Override
     public void updateEntity() {
         if(BeamMeUp.getSide() == Side.CLIENT) {
@@ -55,9 +75,7 @@ public class TileEntityInterdictor extends TileEntityBMU implements IEnergySink,
         }
 
         if(!isInitialized) {
-            EnergyNet.getForWorld(worldObj).addTileEntity(this);
-            TransporterRegistry.registerInterdictor(this);
-            isInitialized = true;
+            this.initialize();
         }
 
         if(!isEnabled) {
@@ -78,12 +96,15 @@ public class TileEntityInterdictor extends TileEntityBMU implements IEnergySink,
 
     @Override
     public void invalidate() {
-        if(isInitialized) {
-            EnergyNet.getForWorld(worldObj).removeTileEntity(this);
-            TransporterRegistry.unregisterInterdictor(this);
-            isInitialized = false;
-        }
+        this.terminate();
+        TransporterRegistry.unregisterInterdictor(this);
         super.invalidate();
+    }
+
+    @Override
+    public void onChunkUnload() {
+        this.terminate();
+        super.onChunkUnload();
     }
 
     @Override
@@ -171,8 +192,8 @@ public class TileEntityInterdictor extends TileEntityBMU implements IEnergySink,
 //}
 
 //public interface IEnergySink extends IEnergyAcceptor {
-    public boolean demandsEnergy() {
-        return energyStored < ENERGY_CAPACITY;
+    public int demandsEnergy() {
+        return ENERGY_CAPACITY - energyStored;
     }
 
     public int injectEnergy(Direction directionFrom, int amount) {
@@ -182,6 +203,10 @@ public class TileEntityInterdictor extends TileEntityBMU implements IEnergySink,
         }
         energyStored += amount;
         return 0;
+    }
+
+    public int getMaxSafeInput() {
+        return 128;
     }
 //}
 
@@ -222,7 +247,7 @@ public class TileEntityInterdictor extends TileEntityBMU implements IEnergySink,
         return true;
     }
 
-    public void attach(IComputerAccess computer, String computerSide) {}
+    public void attach(IComputerAccess computer) {}
     public void detach(IComputerAccess computer) {}
 //}
 
