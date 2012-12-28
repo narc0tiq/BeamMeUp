@@ -4,10 +4,19 @@ import cpw.mods.fml.client.FMLClientHandler;
 
 import net.minecraft.world.World;
 
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.client.MinecraftForgeClient;
 
 public class ClientProxy extends CommonProxy {
     public static final String BLOCKS_PNG = "/bmu-gfx/blocks.png";
+
+    @Override
+    public void preInit() {
+        super.preInit();
+
+        EventHandler eventHandler = new ClientEventHandler();
+        MinecraftForge.EVENT_BUS.register(eventHandler);
+    }
 
     @Override
     public void init() {

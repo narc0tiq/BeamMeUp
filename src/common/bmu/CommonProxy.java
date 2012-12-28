@@ -10,6 +10,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
 
 import net.minecraftforge.common.Configuration;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.Property;
 
 public class CommonProxy {
@@ -43,6 +44,11 @@ public class CommonProxy {
 
     public static final byte PACKET_TELEPORT      = 0;
     public static final byte PACKET_MACHINE_STATE = 1;
+
+    public void preInit() {
+        EventHandler eventHandler = new EventHandler();
+        MinecraftForge.EVENT_BUS.register(eventHandler);
+    }
 
     public void init() {
         initBlocks(BeamMeUp.config);

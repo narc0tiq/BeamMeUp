@@ -37,8 +37,7 @@ public class BeamMeUp {
     @Mod.PreInit
     public void preInit(FMLPreInitializationEvent event) {
         config = new Configuration(event.getSuggestedConfigurationFile());
-        EventHandler eventHandler = new EventHandler();
-        MinecraftForge.EVENT_BUS.register(eventHandler);
+        proxy.preInit();
     }
 
     @Mod.Init
