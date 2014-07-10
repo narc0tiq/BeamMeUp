@@ -1,15 +1,15 @@
 [{
   "modid": "BeamMeUp",
   "name": "Beam Me Up!",
-  "description": "An IC2 addon for Star Trek-style teleporters.",
+  "description": "Star Trek-style teleporters.",
   "version": "%conf:VERSION%",
-  "mcversion": "1.4.6",
+  "mcversion": "1.6.4",
   "logoFile": "",
   "url": "http://github.com/narc0tiq/BeamMeUp",
   "updateUrl": "",
-  "authors": ["Narc"],
+  "authors": ["Narc0tiq"],
   "credits": "",
   "parent": "",
   "screenshots": [],
-  "dependencies": ["IC2", "ComputerCraft"]
+  "dependencies": ["CoFHCore", "ComputerCraft"]
 }]

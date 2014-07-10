@@ -31,7 +31,9 @@ public class EntityTransporterHelper extends Entity {
     public boolean shouldRiderSit() {
         if(riddenByEntity != null) {
             try {
-                Method m = Entity.class.getDeclaredMethod("%conf:Entity.setFlag.obfuscated%", int.class, boolean.class);
+                // FIXME: Use something better here. Access Transformer? Unless
+                // it's already public now.
+                Method m = Entity.class.getDeclaredMethod("%Entity.setFlag.obfuscated%", int.class, boolean.class);
                 m.setAccessible(true);
                 m.invoke(riddenByEntity, 2, false);
             }

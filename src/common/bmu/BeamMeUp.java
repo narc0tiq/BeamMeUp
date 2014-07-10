@@ -1,29 +1,30 @@
 package bmu;
 
-import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Mod;
+import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.SidedProxy;
+
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
+
 import cpw.mods.fml.common.network.NetworkMod;
-import cpw.mods.fml.relauncher.Side;
 
 import net.minecraftforge.common.Configuration;
-import net.minecraftforge.common.MinecraftForge;
+
 
 @Mod(
-        modid = "BeamMeUp",
-        version = "%conf:VERSION%",
-        useMetadata = true,
-        dependencies = "required-after:IC2;after:ComputerCraft"
-    )
+    modid = "BeamMeUp",
+    version = "%conf:VERSION%",
+    useMetadata = true,
+    dependencies = "after:ComputerCraft"
+)
 @NetworkMod(
-        clientSideRequired = true,
-        serverSideRequired = false,
-        versionBounds = "%conf:VERSION_BOUNDS%",
-        channels = { CommonProxy.CHANNEL_NAME },
-        packetHandler = PacketHandler.class
+    clientSideRequired = true,
+    serverSideRequired = false,
+    versionBounds = "%conf:VERSION_BOUNDS%",
+    channels = { CommonProxy.CHANNEL_NAME },
+    packetHandler = PacketHandler.class
 )
 public class BeamMeUp {
     @Mod.Instance("BeamMeUp")
@@ -67,9 +68,5 @@ public class BeamMeUp {
             System.out.println("BeamMeUp: Did not load " + name + " integration: " + e);
             return false;
         }
-    }
-
-    public static Side getSide() {
-        return FMLCommonHandler.instance().getEffectiveSide();
     }
 }
