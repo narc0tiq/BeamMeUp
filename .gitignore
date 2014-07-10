@@ -1,1 +1,4 @@
 .*
+
+!.git*
+!.syntastic_javac_config
