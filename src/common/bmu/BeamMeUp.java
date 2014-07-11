@@ -1,5 +1,9 @@
 package bmu;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import cpw.mods.fml.common.FMLLog;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.SidedProxy;
@@ -14,58 +18,59 @@ import net.minecraftforge.common.Configuration;
 
 
 @Mod(
-    modid = "BeamMeUp",
-    version = "%conf:VERSION%",
+    modid = BeamMeUp.MODID,
+    version = BeamMeUp.VERSION,
     useMetadata = true,
     dependencies = "after:ComputerCraft"
 )
 @NetworkMod(
     clientSideRequired = true,
     serverSideRequired = false,
-    versionBounds = "%conf:VERSION_BOUNDS%",
-    channels = { CommonProxy.CHANNEL_NAME },
-    packetHandler = PacketHandler.class
+    versionBounds = "%conf:VERSION_BOUNDS%"
 )
 public class BeamMeUp {
-    @Mod.Instance("BeamMeUp")
+    public static final String MODID = "%conf:PROJECT_NAME%";
+    public static final String VERSION = "%conf:VERSION%";
+
+    @Mod.Instance(BeamMeUp.MODID)
     public static BeamMeUp instance;
 
     @SidedProxy(clientSide = "bmu.ClientProxy", serverSide = "bmu.CommonProxy")
     public static CommonProxy proxy;
 
     public static Configuration config;
+    public static Logger log;
 
-    @Mod.PreInit
+    @EventHandler
     public void preInit(FMLPreInitializationEvent event) {
         config = new Configuration(event.getSuggestedConfigurationFile());
+
+        log = Logger.getLogger(MODID);
+        log.setParent(FMLLog.getLogger());
+
         proxy.preInit();
     }
 
-    @Mod.Init
+    @EventHandler
     public void init(FMLInitializationEvent event) {
-        try {
-            config.load();
-        }
-        catch (RuntimeException e) { /* and ignore it */ }
-        proxy.init();
-        config.save();
+        proxy.init(config);
     }
 
-    @Mod.PostInit
+    @EventHandler
     public void postInit(FMLPostInitializationEvent event) {
         //loadIntegration("whatever");
     }
 
     @SuppressWarnings("unchecked")
     private static boolean loadIntegration(String name) {
-        System.out.println("BeamMeUp: Loading " + name + " integration...");
+        log.info("Loading " + name + " integration...");
 
         try {
             Class t = BeamMeUp.class.getClassLoader().loadClass("bmu.integration." + name);
             return ((Boolean)t.getMethod("init", new Class[0]).invoke((Object)null, new Object[0])).booleanValue();
         }
         catch (Throwable e) {
-            System.out.println("BeamMeUp: Did not load " + name + " integration: " + e);
+            log.log(Level.WARNING, "Integration with " + name + " did not load!", e);
             return false;
         }
     }
