@@ -12,6 +12,7 @@ public class CommonProxy {
 
     public void init(Configuration config) {
         // TODO: Init config stuff here.
+        BlockInfo.registerBlocks();
 
         if(config.hasChanged())
             config.save();
